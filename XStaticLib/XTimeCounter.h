@@ -3,7 +3,7 @@
 #include <iostream>
 #include <chrono>
 
-namespace XSL
+namespace xsl
 {
     class XTimeCounter
     {
@@ -18,8 +18,13 @@ namespace XSL
             m_endTime(std::chrono::steady_clock::now()),
             m_duration(0.0f)
         {
-
         }
+
+        XTimeCounter(const XTimeCounter& other) = default;
+        XTimeCounter(XTimeCounter&& other) noexcept = default;
+        XTimeCounter& operator=(const XTimeCounter& other) = default;
+        XTimeCounter& operator=(XTimeCounter&& other) noexcept = default;
+        ~XTimeCounter() = default;
 
         void Start()
         {
@@ -32,21 +37,19 @@ namespace XSL
             m_duration = m_endTime - m_startTime;
         }
 
-        float Duration()
+        float Duration() const
         {
             return m_duration.count();
         }
 
-        void CoutDuration()
+        void CoutDuration() const
         {
-            std::cout << "Duration: " << Duration() << "s" << std::endl;
+            std::cout << "Duration: " << Duration() << "s\n";
         }
 
-        void CoutDuration(const char* str)
+        void CoutDuration(const char* str) const
         {
-            std::cout << str << " Duration: " << Duration() << "s" << std::endl;
+            std::cout << str << " Duration: " << Duration() << "s\n";
         }
-
-        ~XTimeCounter() = default;
     };
 }

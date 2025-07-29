@@ -2,9 +2,10 @@
 
 #include <iostream>
 
-namespace XSL
+namespace xsl
 {
-	enum class LogLevel
+	enum class LogLevel :
+	std::uint8_t
 	{
 		LOG_NONE,
 		LOG_INFO,		
@@ -14,7 +15,7 @@ namespace XSL
 	};
 
 	
-	static class XLog
+	class XLog
 	{
 	
 	public:
@@ -32,6 +33,11 @@ namespace XSL
                 std::cout << "[INFO] " << value << std::endl;
 			}
 
+			else if (level == LogLevel::LOG_WARN)
+			{
+				std::cout << "[WARN] " << value << std::endl;
+			}
+
 			else if (level == LogLevel::LOG_ERROR)
 			{
 				std::cout << "[ERROR] " << value << std::endl;
@@ -44,6 +50,11 @@ namespace XSL
 			if (level == LogLevel::LOG_INFO)
 			{
 				std::cout << "[INFO] " << message << value << std::endl;
+			}
+
+			else if (level == LogLevel::LOG_WARN)
+			{
+				std::cout << "[WARN] "<< message << value << std::endl;
 			}
 
 			else if (level == LogLevel::LOG_ERROR)

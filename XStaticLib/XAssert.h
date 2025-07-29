@@ -4,9 +4,9 @@
 
 #include "XLog.h"
 
-namespace XSL
+namespace xsl
 {
-	void Assert(bool condition, const char* message)
+	inline void Assert(bool condition, const char* message)
 	{
 		if (!condition)
 			XLog::Log(message, LogLevel::LOG_ERROR);

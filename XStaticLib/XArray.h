@@ -4,8 +4,9 @@
 
 #include "XLog.h"
 #include "XAssert.h"
+#include "XSearch.h"
 
-namespace XSL
+namespace xsl
 {
     template <typename T, size_t N>
     class Array
@@ -20,42 +21,43 @@ namespace XSL
         Array() : 
             size(N) 
         {
-        };
+        }
 
-        Array(std::initializer_list<T>&& array) :
+        Array(std::initializer_list<T> array) :
             size(N)
         {
             if(array.size() > N)
                 std::copy(array.begin(), array.begin() + size, this->array);
             else if(array.size() <= N)
                 std::copy(array.begin(), array.end(), this->array);
-        };
+        }
 
         Array(const Array<T, N>& arr) :
             size(N)           
         {
             std::copy(arr.Begin(), arr.End(), array);
-        };
+        }
 
-        Array(const Array<T, N>&& arr) :
-            size(N)
+        Array(const Array<T, N>&& arr) noexcept :
+            size(N) 
         {
             std::copy(arr.Begin(), arr.End(), array);
-        };
+        }
 
         Array<T, N>& operator=(const Array<T, N>& arr)
         {
-            std::copy(arr.Begin(), arr.End(), array);
+            if(this != &arr)
+                std::copy(arr.Begin(), arr.End(), array);
             return *this;
-        };
+        }
 
-        Array<T, N>& operator=(Array<T, N>&& arr)
+        Array<T, N>& operator=(Array<T, N>&& arr) noexcept
         {
             std::copy(arr.Begin(), arr.End(), array);
             return *this;
-        };
+        }
 
-        ~Array() {};
+        ~Array() = default;
 
         T& operator[](size_t index) 
         { 
@@ -89,6 +91,25 @@ namespace XSL
         const T* Begin() const { return begin; }
 
         const T* End() const { return end; }
+
+        int BSearch(const T& value) const
+        {
+            for (int i = 0, j = 1; j < size; i++, j++)
+            {
+                if (!this[i]<this[j])
+                {
+                    XLog::Log("The array is not sorted in ascending order", xsl::LogLevel::LOG_ERROR);
+                    return -1;
+                }
+            }
+            int index = BinarySearch(*this, value, 0, static_cast<int>(size-1));
+            if (index == -1)
+            {
+                XLog::Log("Value not found", LogLevel::LOG_INFO);
+                return -1;
+            }
+            return index;
+        }
         
         void CoutArray() const
         {

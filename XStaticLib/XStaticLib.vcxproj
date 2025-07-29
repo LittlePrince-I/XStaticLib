@@ -142,6 +142,7 @@
     <ClInclude Include="XLog.h" />
     <ClInclude Include="XSearch.h" />
     <ClInclude Include="XSort.h" />
+    <ClInclude Include="XStack.h" />
     <ClInclude Include="XTimeCounter.h" />
   </ItemGroup>
   <ItemGroup>
