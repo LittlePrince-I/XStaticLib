@@ -10,7 +10,7 @@ namespace xsl
 {
 
     template <typename T>
-    class ListNode
+    struct ListNode
     {
     public:
         T data{};
@@ -32,27 +32,28 @@ namespace xsl
     template <typename T>
     class List
     {
-        protected:
-        ListNode<T>* head;
-        size_t size;
-        
-        public:
-        List() : head(nullptr), size(0) {}
-        List(const List<T>& other) = default;
-        List(const List<T>&& other) = default;
+    protected:
+        ListNode<T>* head = nullptr;
+        size_t listSize = 0;
+
+    protected:
+        List() = default;
+        List(const List<T>& other) {}
+        List(const List<T>&& other) noexcept {}
         List& operator=(const List<T>& other) = default;
         List& operator=(List<T>&& other) = default;
         virtual ~List() = default;
+        
+    public:
+        virtual ListNode<T>* getHead() const { return head; }
 
-        virtual  ListNode<T>* GetHead() const { return head; }
+        virtual size_t size() const { return listSize; }
 
-        virtual size_t Size() const { return size; }
+        virtual void addOnHead(const T& data) = 0;
+        virtual void addOnTail(const T& data) = 0;
+        virtual void coutList() const = 0;
 
-        virtual void AddOnHead() = 0;
-        virtual void AddOnTail() = 0;
-        virtual void CoutList() = 0;
-
-        virtual void Empty()
+        virtual void empty()
         {
             while (head != nullptr)
             {
@@ -60,10 +61,10 @@ namespace xsl
                 head = head->next;
                 delete temp;
             }
-            size = 0;
+            listSize = 0;
         }
 
-        virtual void SetIndex()
+        virtual void setIndex()
         {
             ListNode<T>* temp = head;
             size_t counter = 0;
@@ -78,7 +79,7 @@ namespace xsl
         virtual const ListNode<T>* operator[](size_t index) const
         {
             ListNode<T>* temp = head;
-            Assert(size > index, "Index out of range");
+            Assert(listSize > index, "Index out of range");
             
             while (temp != nullptr)
             {
@@ -95,34 +96,33 @@ namespace xsl
     {
         
     public:
-        LinkedList()
-        {
-        }
+        LinkedList() = default;
+        
 
         LinkedList(std::initializer_list<T> list)
         {
-            for (int i = list.size() - 1; i >= 0; --i)
+            for (int i = static_cast<int>(list.size()) - 1; i >= 0; --i)
             {
-                AddOnHead(list.begin()[i]);
+                LinkedList<T>::addOnHead(list.begin()[i]);
             }
         }
 
         LinkedList(const LinkedList<T>& list)
         {            
-            ListNode<T>* temp = list.GetHead();
+            ListNode<T>* temp = list.getHead();
             while (temp != nullptr)
             {
-                AddOnTail(temp->data);
+                LinkedList<T>::addOnTail(temp->data);
                 temp = temp->next;
             }            
         }
 
         LinkedList(LinkedList<T>&& list) noexcept
         {
-            ListNode<T>* temp = list.GetHead();
+            ListNode<T>* temp = list.getHead();
             while (temp != nullptr)
             {
-                AddOnTail(temp->data);
+                LinkedList<T>::addOnTail(temp->data);
                 temp = temp->next;
             }
         }
@@ -132,11 +132,11 @@ namespace xsl
             if (this != &list)
             {
                 if (List<T>::head != nullptr)
-                    List<T>::Empty();
-                ListNode<T>* temp = list.GetHead();
+                    List<T>::empty();
+                ListNode<T>* temp = list.getHead();
                 while (temp != nullptr)
                 {
-                    AddOnTail(temp->data);
+                    LinkedList<T>::addOnTail(temp->data);
                     temp = temp->next;
                 }
             }
@@ -146,11 +146,11 @@ namespace xsl
         LinkedList& operator=(LinkedList<T>&& list) noexcept
         {
             if (List<T>::head != nullptr)
-                List<T>::Empty();
-            ListNode<T>* temp = list.GetHead();
+                List<T>::empty();
+            ListNode<T>* temp = list.getHead();
             while (temp != nullptr)
             {
-                AddOnTail(temp->data);
+                LinkedList<T>::addOnTail(temp->data);
                 temp = temp->next;
             }
             return *this;
@@ -159,27 +159,27 @@ namespace xsl
 
         ~LinkedList() override
         {
-            List<T>::Empty();
+            List<T>::empty();
         }
         
-        void AddOnHead(const T& data)
+        void addOnHead(const T& data) override
         {
             ListNode<T>* newNode = new ListNode<T>;
             newNode->data = data;
             newNode->next = List<T>::head;
             List<T>::head = newNode;
-            ++List<T>::size;
-            List<T>::SetIndex();
+            ++List<T>::listSize;
+            List<T>::setIndex();
         }
 
-        void AddOnTail(const T& data)
+        void addOnTail(const T& data) override
         {
             ListNode<T>* newNode = new ListNode<T>;
             newNode->data = data;
             if (List<T>::head == nullptr)
             {
                 List<T>::head = newNode;
-                ++List<T>::size;
+                ++List<T>::listSize;
                 return;
             }
             ListNode<T>* temp = List<T>::head;
@@ -188,13 +188,13 @@ namespace xsl
                 temp = temp->next;
             }
             temp->next = newNode;
-            ++List<T>::size;
-            newNode->index = List<T>::size - 1;
+            ++List<T>::listSize;
+            newNode->index = List<T>::listSize - 1;
         }
 
         friend std::ostream& operator<<(std::ostream& os, const LinkedList<T>& list)
         { 
-            ListNode<T>* temp = list.GetHead();
+            ListNode<T>* temp = list.getHead();
             os << "\n----------------------------------------\n\n";
             while(temp != nullptr)
             {
@@ -207,7 +207,7 @@ namespace xsl
             return os;
         }
 
-        void CoutList() const
+        void coutList() const override
         {
             XLog::Log(*this, LogLevel::LOG_INFO);
         }
@@ -218,37 +218,34 @@ namespace xsl
     class DLinkedList : public List<T>
     {
         private:
-            ListNode<T>* tail;
+            ListNode<T>* tail = nullptr;
         public:
-            DLinkedList():
-            tail(nullptr)
-            {
-            }
+            DLinkedList() = default;
 
-            DLinkedList(std::initializer_list<T> list) 
+            DLinkedList(std::initializer_list<T> list)
             {
-                for (int i = 0; i < list.size(); i++)
+                for (size_t i = 0; i < list.size(); i++)
                 {
-                    AddOnTail(list.begin()[i]);
+                    DLinkedList<T>::addOnTail(list.begin()[i]);
                 }
             }
 
             DLinkedList(const DLinkedList<T>& list)
             {
-                ListNode<T>* temp = list.GetHead();
+                ListNode<T>* temp = list.getHead();
                 while (temp != nullptr)
                 {
-                    AddOnTail(temp->data);
+                    DLinkedList<T>::addOnTail(temp->data);
                     temp = temp->next;
                 }
             }
 
             DLinkedList(DLinkedList<T>&& list) noexcept
             {
-                ListNode<T>* temp = list.GetHead();
+                ListNode<T>* temp = list.getHead();
                 while (temp != nullptr)
                 {
-                    AddOnTail(temp->data);
+                    DLinkedList<T>::addOnTail(temp->data);
                     temp = temp->next;
                 }
             }
@@ -258,11 +255,11 @@ namespace xsl
                 if (this != &list)
                 {
                     if(List<T>::head != nullptr)
-                        List<T>::Empty();
-                    ListNode<T>* temp = list.GetHead();
+                        List<T>::empty();
+                    ListNode<T>* temp = list.getHead();
                     while (temp != nullptr)
                     {
-                        AddOnTail(temp->data);
+                        DLinkedList<T>::addOnTail(temp->data);
                         temp = temp->next;
                     }
                 }
@@ -272,11 +269,11 @@ namespace xsl
             DLinkedList<T>& operator=(DLinkedList<T>&& list) noexcept
             {
                 if (List<T>::head != nullptr)
-                    List<T>::Empty();
-                ListNode<T>* temp = list.GetHead();
+                    List<T>::empty();
+                ListNode<T>* temp = list.getHead();
                 while (temp != nullptr)
                 {
-                    AddOnTail(temp->data);
+                    DLinkedList<T>::addOnTail(temp->data);
                     temp = temp->next;
                 }
                 return *this;
@@ -284,15 +281,15 @@ namespace xsl
 
             ~DLinkedList() override
             {
-                List<T>::Empty();
+                List<T>::empty();
             }
 
-            ListNode<T>* GetTail() const
+            ListNode<T>* getTail() const
             {
                 return tail;
             }          
 
-            void AddOnHead(const T& data)
+            void addOnHead(const T& data) override
             {
                 ListNode<T>* newNode = new ListNode<T>;
                 newNode->data = data;
@@ -300,17 +297,17 @@ namespace xsl
                 {
                     List<T>::head = newNode;
                     tail = newNode;
-                    ++List<T>::size;
+                    ++List<T>::listSize;
                     return;
                 }
                 newNode->next = List<T>::head;
                 List<T>::head->prev = newNode;
                 List<T>::head = newNode;
                 ++List<T>::size;
-                List<T>::SetIndex();
+                List<T>::setIndex();
             }
 
-            void AddOnTail(const T& data)
+            void addOnTail(const T& data) override
             {
                 ListNode<T>* newNode = new ListNode<T>;
                 newNode->data = data;
@@ -318,19 +315,19 @@ namespace xsl
                 {
                     List<T>::head = newNode;
                     tail = newNode;
-                    ++List<T>::size;
+                    ++List<T>::listSize;
                     return;
                 }
                 newNode->prev = tail;
                 tail->next = newNode;
                 tail = newNode;
-                ++List<T>::size;
-                newNode->index = List<T>::size - 1;
+                ++List<T>::listSize;
+                newNode->index = List<T>::listSize - 1;
             }
 
             friend std::ostream& operator<<(std::ostream& os, const DLinkedList<T>& list)
             {
-                ListNode<T>* temp = list.GetHead();
+                ListNode<T>* temp = list.getHead();
                 os << "\n----------------------------------------\n\n";
                 while (temp != nullptr)
                 {
@@ -343,7 +340,7 @@ namespace xsl
                 return os;
             }
 
-            void CoutList() const
+            void coutList() const override
             {
                 XLog::Log(*this, LogLevel::LOG_INFO);
             }

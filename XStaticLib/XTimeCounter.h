@@ -26,30 +26,30 @@ namespace xsl
         XTimeCounter& operator=(XTimeCounter&& other) noexcept = default;
         ~XTimeCounter() = default;
 
-        void Start()
+        void start()
         {
             m_startTime = std::chrono::steady_clock::now();
         }
 
-        void End()
+        void end()
         {
             m_endTime = std::chrono::steady_clock::now();
             m_duration = m_endTime - m_startTime;
         }
 
-        float Duration() const
+        float duration() const
         {
             return m_duration.count();
         }
 
-        void CoutDuration() const
+        void coutDuration() const
         {
-            std::cout << "Duration: " << Duration() << "s\n";
+            XLog::Log(duration(), LogLevel::LOG_INFO);
         }
 
-        void CoutDuration(const char* str) const
+        void coutDuration(const char* message) const
         {
-            std::cout << str << " Duration: " << Duration() << "s\n";
+            XLog::Log(message, duration(), LogLevel::LOG_INFO);
         }
     };
 }

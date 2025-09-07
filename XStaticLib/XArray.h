@@ -1,6 +1,7 @@
-#pragma once
+﻿#pragma once
 #include <iostream>
 #include <initializer_list>
+#include <optional>
 
 #include "XLog.h"
 #include "XAssert.h"
@@ -12,48 +13,48 @@ namespace xsl
     class Array
     {
     private:
-        size_t size = 0;
+        size_t arraySize = 0;
         T array[N] = {};
-        T* begin = array;
-        T* end = array + N;
+        T* arrayBegin = array;
+        T* arrayEnd = array + N;
 
     public:
         Array() : 
-            size(N) 
+            arraySize(N) 
         {
         }
 
         Array(std::initializer_list<T> array) :
-            size(N)
+            arraySize(N)
         {
             if(array.size() > N)
-                std::copy(array.begin(), array.begin() + size, this->array);
+                std::copy(array.begin(), array.begin() + arraySize, this->array);
             else if(array.size() <= N)
                 std::copy(array.begin(), array.end(), this->array);
         }
 
         Array(const Array<T, N>& arr) :
-            size(N)           
+            arraySize(N)           
         {
-            std::copy(arr.Begin(), arr.End(), array);
+            std::copy(arr.begin(), arr.end(), array);
         }
 
         Array(const Array<T, N>&& arr) noexcept :
-            size(N) 
+            arraySize(N) 
         {
-            std::copy(arr.Begin(), arr.End(), array);
+            std::copy(arr.begin(), arr.end(), array);
         }
 
         Array<T, N>& operator=(const Array<T, N>& arr)
         {
             if(this != &arr)
-                std::copy(arr.Begin(), arr.End(), array);
+                std::copy(arr.begin(), arr.end(), array);
             return *this;
         }
 
         Array<T, N>& operator=(Array<T, N>&& arr) noexcept
         {
-            std::copy(arr.Begin(), arr.End(), array);
+            std::copy(arr.begin(), arr.end(), array);
             return *this;
         }
 
@@ -61,12 +62,12 @@ namespace xsl
 
         T& operator[](size_t index) 
         { 
-            Assert(index < size, "Index out of range");
+            Assert(index < arraySize, "Index out of range");
             return array[index]; 
         }
         const T& operator[](size_t index) const 
         { 
-            Assert(index < size, "Index out of range");
+            Assert(index < arraySize, "Index out of range");
             return array[index]; 
         }
 
@@ -82,19 +83,19 @@ namespace xsl
             return os;
         }
 
-        constexpr size_t Size() const { return size; }
+        constexpr size_t size() const { return arraySize; }
 
-        T* Begin()  { return begin; }
+        T* begin()  { return arrayBegin; }
 
-        T* End()  { return end; }
+        T* end()  { return arrayEnd; }
 
-        const T* Begin() const { return begin; }
+        const T* begin() const { return arrayBegin; }
 
-        const T* End() const { return end; }
+        const T* end() const { return arrayEnd; }
 
-        int BSearch(const T& value) const
+        std::optional<int> search(const T& value) const
         {
-            for (int i = 0, j = 1; j < size; i++, j++)
+            for (int i = 0, j = 1; j < arraySize; i++, j++)
             {
                 if (!this[i]<this[j])
                 {
@@ -102,16 +103,16 @@ namespace xsl
                     return -1;
                 }
             }
-            int index = BinarySearch(*this, value, 0, static_cast<int>(size-1));
+            int index = BinarySearch(*this, value, 0, static_cast<int>(arraySize-1));
             if (index == -1)
             {
                 XLog::Log("Value not found", LogLevel::LOG_INFO);
-                return -1;
+                return std::nullopt;
             }
             return index;
         }
         
-        void CoutArray() const
+        void coutArray() const
         {
             XLog::Log(*this, LogLevel::LOG_INFO);
         }

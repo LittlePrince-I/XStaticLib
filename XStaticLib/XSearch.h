@@ -2,15 +2,26 @@
 
 namespace xsl
 {
+    template <class Container, typename T>
+    int linearSearch(const Container& container, const T& target, int startIndex, int endIndex)
+    {
+        for (int i = startIndex; i <= endIndex; ++i)
+        {
+            if (container[i] == target)
+                return i;
+        }
+        return -1;
+    }
+    
     template<class Container, typename T>
-    int BinarySearch(const Container& container, const T value, int startIndex, int endIndex)
+    int binarySearch(const Container& container, const T target, int startIndex, int endIndex)
     {
         while (startIndex <= endIndex)
         {
             int midIndex = (startIndex + endIndex) / 2;
-            if (container[midIndex] == value)
+            if (container[midIndex] == target)
                 return midIndex;
-            if (container[midIndex] > value)
+            if (container[midIndex] > target)
                 endIndex = midIndex-1;
             else
                 startIndex = midIndex + 1;

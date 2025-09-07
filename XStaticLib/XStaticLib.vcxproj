@@ -110,6 +110,7 @@
       <ConformanceMode>true</ConformanceMode>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -140,10 +141,12 @@
     <ClInclude Include="XAssert.h" />
     <ClInclude Include="XList.h" />
     <ClInclude Include="XLog.h" />
+    <ClInclude Include="XQueue.h" />
     <ClInclude Include="XSearch.h" />
     <ClInclude Include="XSort.h" />
     <ClInclude Include="XStack.h" />
     <ClInclude Include="XTimeCounter.h" />
+    <ClInclude Include="XTree.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="XSL" />

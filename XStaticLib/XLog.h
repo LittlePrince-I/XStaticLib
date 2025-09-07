@@ -17,8 +17,14 @@ namespace xsl
 	
 	class XLog
 	{
-	
 	public:
+		XLog() = delete;
+		XLog(const XLog&) = delete;
+		XLog(const XLog&&) = delete;
+		XLog& operator=(const XLog&) = delete;
+		XLog& operator=(const XLog&&) = delete;
+		~XLog() = delete;
+		
 		template <typename T>
 		static void Log(T& value)
 		{

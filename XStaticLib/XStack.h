@@ -1,4 +1,7 @@
 ﻿#pragma once
+#include <iostream>
+#include <optional>
+
 #include "XLog.h"
 
 namespace xsl
@@ -7,44 +10,52 @@ namespace xsl
     class Stack
     {
     private:
-        size_t size {};
+        size_t stackSize {};
         T stack[N] {};
-        int top;
-        size_t capacity;
+        int top = -1;
+        size_t stackCapacity = N;
+
+    private:
+        T& operator[](size_t index) 
+        {
+            return stack[index];
+        }
 
     public:
-        Stack() : size(0), top(-1), capacity(N) {}
+        Stack() = default;
         Stack(const Stack& other) = default;
         Stack(Stack&& other) = default;
         Stack& operator=(const Stack& other) = default;
         Stack& operator=(Stack&& other) = default;
         ~Stack() = default;
 
-        size_t Size() const { return size; }
+        size_t size() const { return stackSize; }
 
-        size_t Capacity() const { return capacity; }
+        size_t capacity() const { return stackCapacity; }
 
-        void Push(const T& value)
+        void push(const T& value)
         {
-            if (top >= capacity)
+            if (top >= static_cast<int>(stackCapacity))
             {
                 XLog::Log("Stack Overflow", LogLevel::LOG_ERROR);
                 return;
             }
             stack[++top] = value;
+            stackSize++;
         }
 
-        T Pop()
+        std::optional<T> pop()
         {
             if (top < 0)
             {
                 XLog::Log("stack is empty", LogLevel::LOG_ERROR);
-                return -1;
+                return std::nullopt;
             }
+            stackSize--;
             return stack[top--];
         }
 
-        void Empty()
+        void empty()
         {
             if (top == -1)
                 return;
@@ -52,9 +63,23 @@ namespace xsl
             stack[N] = {};
         }
 
-        bool IsEmpty() const { return top == -1; }
+        bool isEmpty() const { return top == -1; }
 
-    
-    
+        friend std::ostream& operator<<(std::ostream& os, xsl::Stack<T, N> stack)
+        {
+            os<< "[";
+            for (int i = 0; i < stack.top; i++)
+            {
+                os<<stack[i]<<",";
+            }
+            os<<stack[stack.top]<<"]\n";
+
+            return os;
+        }
+
+        void coutStack() const
+        {
+            XLog::Log(*this, LogLevel::LOG_INFO);
+        }
     };
 }

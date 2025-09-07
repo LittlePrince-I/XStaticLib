@@ -10,7 +10,7 @@ namespace xsl
     }
 
     template <typename T>
-    std::vector<T>& InsertSort(std::vector<T>& arr)
+    std::vector<T>& insertSort(std::vector<T>& arr)
     {
         for (int i = 1; i < arr.size(); i++)
         {
@@ -28,9 +28,9 @@ namespace xsl
     }
 
     template <>
-    std::vector<const char*>& InsertSort(std::vector<const char*>& arr)
+    inline std::vector<const char*>& insertSort(std::vector<const char*>& arr)
     {
-        for (int i = 1; i < arr.size(); i++)
+        for (int i = 1; i < static_cast<int>(arr.size()); i++)
         {
             const char* key = arr[i];
             int j = i - 1;

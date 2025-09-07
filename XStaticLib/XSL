@@ -4,6 +4,9 @@
 #include <XAssert.h>
 #include <XList.h>
 #include <XLog.h>
+#include <XQueue.h>
 #include <XSearch.h>
 #include <XSort.h>
+#include <XStack.h>
 #include <XTimeCounter.h>
+#include <XTree.h>

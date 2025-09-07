@@ -39,6 +39,15 @@
     <ClInclude Include="XAssert.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="XQueue.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="XStack.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="XTree.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="XSL">
