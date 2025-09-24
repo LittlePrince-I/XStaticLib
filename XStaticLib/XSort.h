@@ -1,47 +1,53 @@
 #pragma once
-#include <string>
 #include <vector>
+#include <cmath>
 
 namespace xsl
 {
-    inline bool Compare(const char*& str1, const char*& str2)
+    template <class Container, typename T>
+    Container& insertSort(Container& container, const int size)
     {
-        return strcmp(str1, str2);
-    }
-
-    template <typename T>
-    std::vector<T>& insertSort(std::vector<T>& arr)
-    {
-        for (int i = 1; i < arr.size(); i++)
+        for (int i = 1; i < size; i++)
         {
-            T key = arr[i];
+            T key = container[i];
             int j = i - 1;
-            while (j >= 0 && arr[j] > key)
+            while (j >= 0 && container[j] > key)
             {
-                arr[j + 1] = arr[j];
+                container[j + 1] = container[j];
                 j--;
             }
-            arr[j + 1] = key;
+            container[j + 1] = key;
         }
 
-        return arr;
+        return container;
     }
 
-    template <>
-    inline std::vector<const char*>& insertSort(std::vector<const char*>& arr)
+    template <class Container, typename T>
+    Container& shellSort(Container& container, const int size)
     {
-        for (int i = 1; i < static_cast<int>(arr.size()); i++)
+        for (int gap = size / 2;gap > 0; gap /= 2)
         {
-            const char* key = arr[i];
-            int j = i - 1;
-            while (j >= 0 && strcmp(arr[j], key) > 0)
+            for (int i = gap; i < size; i+=gap)
             {
-                arr[j + 1] = arr[j];
-                j--;
+                T key = container[i];
+                int j = i - gap;
+                while (j >= 0 && container[j] > key)
+                {
+                    container[j + gap] = container[j];
+                    j -= gap;
+                }
+                container[j + gap] = key;
             }
-            arr[j + 1] = key;
         }
+        return container;
+    }
 
-        return arr;
+    template<class Container, typename T>
+    Container& quickSort(Container& container, const int size)
+    {
+        T pivot = container[0];
+        T* left = &container[0];
+        T* right = &container[size - 1];
+        
     }
 }
