@@ -27,24 +27,30 @@ namespace xsl
         T data {};
         size_t index = 0;
     };
+
+    template<typename T, class TreeType, class NodeType>
+    class BinaryTreeNodeBase : public TreeNode<T>
+    {
+    public:
+        TreeType leftChild = nullptr;
+        TreeType rightChild = nullptr;
+        NodeType nodeType = NodeType::NONE;
+    protected:
+        BinaryTreeNodeBase() = default;
+    };
     
     template<typename T>
-    class BinaryTreeNode : public TreeNode<T>
+    class BinaryTreeNode : virtual public BinaryTreeNodeBase<T, BinaryTreeNode<T>*, BinaryNodeType>
     {
     private:
         bool leftTag = false;
         bool rightTag = false;
         
     public:
-        BinaryTreeNode<T>* leftChild = nullptr;
-        BinaryTreeNode<T>* rightChild = nullptr;
-        BinaryNodeType nodeType = BinaryNodeType::NONE;
-        
-    public:
         BinaryTreeNode() = default;
-        BinaryTreeNode(const T& data)
+        explicit BinaryTreeNode(const T& d) 
         {
-            this->data = data;
+            this->data = d;
         }
         
         BinaryTreeNode(BinaryTreeNode& node)
@@ -55,6 +61,7 @@ namespace xsl
             this->leftChild = nullptr;
             this->rightChild = nullptr;
         }
+        
         BinaryTreeNode(BinaryTreeNode&& node) noexcept
         {
             this->data = node.data;
@@ -74,6 +81,7 @@ namespace xsl
             this->rightChild = nullptr;
             return *this;
         }
+        
         BinaryTreeNode& operator=(BinaryTreeNode&& node)
         {
             if (this == &node)
@@ -116,14 +124,12 @@ namespace xsl
     };
 
     template<typename T>
-    class AVLTreeNode : public BinaryTreeNode<T>
+    class AVLTreeNode : virtual public BinaryTreeNodeBase<T, AVLTreeNode<T>*, BinaryNodeType>
     {
     private:
         int height = 0;
         int balanceFactor = 0;
     public:
-        AVLTreeNode<T>* leftChild = nullptr;
-        AVLTreeNode<T>* rightChild = nullptr;
         AVLTreeNode<T>* parent = nullptr;
     public:
         AVLTreeNode() = default;
@@ -133,7 +139,7 @@ namespace xsl
            this->balanceFactor = node.getBalanceFactor();
         }
 
-        AVLTreeNode(const T& d)
+        explicit AVLTreeNode(const T& d)
         {
             this->data = d;
         }
@@ -148,9 +154,9 @@ namespace xsl
             this->balanceFactor = bf;
         }
         
-        void setHeight(int height)
+        void setHeight(int h)
         {
-            this->height = height;
+            this->height = h;
         }
 
         int getHeight() const
@@ -158,29 +164,56 @@ namespace xsl
             return this->height;
         }
     };
-    
-    template<typename T>
-    class Tree
+
+    template<typename T, class Type>
+    class TreeBase
     {
     protected:
-        TreeNode<T>* rootNode = nullptr;
+        Type rootNode = nullptr;
+        
+    protected:
+        TreeBase() = default;
+    };
+    
+    template<typename T>
+    class Tree : virtual  protected TreeBase<T, TreeNode<T>*>
+    {
+    
     };
 
     template<typename T>
-    class BinaryTree :public Tree<T>
+    class BinaryTree :virtual protected TreeBase<T, BinaryTreeNode<T>*>
     {
     protected:
-        BinaryTreeNode<T>* rootNode = nullptr;
         bool isThreaded = false;
         
     protected:
         size_t maxDegree = 2;
-        BinaryTreeNode<T> nullNode;
+
+    private:
+        BinaryTreeNode<T>* TreeCopyCore(BinaryTreeNode<T>* node)
+        {
+            if (node == nullptr)
+                return nullptr;
+            BinaryTreeNode<T>* newNode = new BinaryTreeNode<T>();
+            newNode->data = node->data;
+            newNode->index = node->index;
+            newNode->nodeType = node->nodeType;
+            newNode->setLeftTag(node->getLeftTag());
+            newNode->setRightTag(node->getRightTag());
+            BinaryTreeNode<T*> lChild = treeCopyCore(node->leftChild);
+            if (lChild != nullptr)
+                setChildNode(newNode, lChild, lChild->nodeType);
+            BinaryTreeNode<T*> rChild = treeCopyCore(node->rightChild);
+            if (rChild != nullptr)
+                setChildNode(newNode, rChild, rChild->nodeType);
+            return newNode;
+        }
 
     public:
         BinaryTree() = default;
 
-        BinaryTree(BinaryTree& other)
+        BinaryTree(const BinaryTree& other)
         {
             this->treeCopy(other);
         }
@@ -212,16 +245,9 @@ namespace xsl
         virtual BinaryTreeNode<T>* addNode(const T& data)
         {
             BinaryTreeNode<T>* newNode = new BinaryTreeNode<T>(data);
-            if (rootNode == nullptr)
+            if (this->rootNode == nullptr)
                 setRootNode(newNode);
             return newNode;
-        }
-
-        void removeNode(BinaryTreeNode<T>* node)
-        {
-            if (node == nullptr)
-                return;
-            delete node;
         }
 
         void setRootNode(BinaryTreeNode<T>* node)
@@ -231,12 +257,12 @@ namespace xsl
             node->index = 1;
         }
 
-        [[nodiscard]] virtual BinaryTreeNode<T>* getRootNode() const
+        BinaryTreeNode<T>* getRootNode() const
         {
             return this->rootNode;
         }
 
-        void virtual setChildNode(BinaryTreeNode<T>* parentNode, BinaryTreeNode<T>* childNode, BinaryNodeType nodeType)
+        static void setChildNode(BinaryTreeNode<T>* parentNode, BinaryTreeNode<T>* childNode, BinaryNodeType nodeType)
         {
             if (childNode == nullptr)
             {
@@ -263,27 +289,7 @@ namespace xsl
         {
             if (this->rootNode != nullptr)
                 this->empty();
-            BinaryTreeNode<T>* previousNode = nullptr;
-            other.preorderTraversal
-            (
-                [this, &previousNode](BinaryTreeNode<T>* node)
-                {
-                    BinaryTreeNode<T>* newNode = new BinaryTreeNode<T>();
-                    newNode->data = node->data;
-                    newNode->index = node->index;
-                    newNode->nodeType = node->nodeType;
-                    newNode->setLeftTag(node->getLeftTag());
-                    newNode->setRightTag(node->getRightTag());
-                    if (newNode->nodeType == BinaryNodeType::ROOT)
-                        this->setRootNode(newNode);
-                    else if (newNode->nodeType == BinaryNodeType::LEFT)
-                        previousNode->leftChild = newNode;
-                    else if (newNode->nodeType == BinaryNodeType::RIGHT)
-                        previousNode->rightChild = newNode;
-                    previousNode = newNode;
-                },
-                other.getRootNode()
-            );
+            treeCopyCore(other.getRootNode());
             this->setIsThreaded(other.getIsThreaded());
         }
 
@@ -483,7 +489,7 @@ namespace xsl
  
         }
 
-        virtual void empty()
+        void empty()
         {
             this->postorderTraversal
             (
@@ -491,7 +497,7 @@ namespace xsl
                 {
                     delete node;
                 },
-                rootNode
+                this->rootNode
             );
         }
 
@@ -530,10 +536,10 @@ namespace xsl
     };
 
     template<typename T>
-    class BinarySearchTree :public BinaryTree<T>
+    class BinarySearchTree : virtual protected TreeBase<T, BinaryTreeNode<T>*>
     {
     private:
-        bool isLeafNode(BinaryTreeNode<T>* node)
+        static bool isLeafNode(BinaryTreeNode<T>* node)
         {
             if (node == nullptr)
                 return false;
@@ -571,7 +577,7 @@ namespace xsl
             return nullptr;
         }
 
-        BinaryTreeNode<T>* findMaxNode(BinaryTreeNode<T>* node)
+        static BinaryTreeNode<T>* findMaxNode(BinaryTreeNode<T>* node)
         {
             if (node == nullptr)
                 return nullptr;
@@ -582,7 +588,7 @@ namespace xsl
             return node;
         }
 
-        BinaryTreeNode<T>* findMinNode(BinaryTreeNode<T>* node)
+        static BinaryTreeNode<T>* findMinNode(BinaryTreeNode<T>* node)
         {
             if (node == nullptr)
                 return nullptr;
@@ -593,7 +599,7 @@ namespace xsl
             return node;
         }
 
-        virtual void deleteNode(BinaryTreeNode<T>* node)
+        void deleteNode(BinaryTreeNode<T>* node)
         {
             if (node == nullptr)
                 return;
@@ -674,11 +680,8 @@ namespace xsl
     };
 
     template <typename T>
-    class AVLTree :protected BinarySearchTree<T>
+    class AVLTree : virtual protected TreeBase<T, AVLTreeNode<T>*>
     {
-    private:
-        AVLTreeNode<T>* rootNode = nullptr;
-
     private:
         void setTreeHeight(AVLTreeNode<T>* node)
         {
@@ -690,7 +693,6 @@ namespace xsl
                     return;
                 currentNode->setHeight(h);
                 h++;
-                setBanlanceFactor(node);
                 currentNode = currentNode->parent;
             }
         }
@@ -711,6 +713,7 @@ namespace xsl
             AVLTreeNode<T>* currentNode = node;
             while (currentNode != nullptr)
             {
+                setBanlanceFactor(currentNode);
                 if (currentNode->getBalanceFactor() > 1 || currentNode->getBalanceFactor() < -1)
                     balance(currentNode);
                 else
@@ -745,20 +748,37 @@ namespace xsl
             node->parent = nodeLeft;
             node->leftChild = nodeLeft->rightChild;
             nodeLeft->rightChild = node;
-            node->leftChild->parent = node;
+            if (node->leftChild != nullptr)
+            {
+                node->leftChild->parent = node;
+                node->leftChild->nodeType = BinaryNodeType::LEFT;
+            }
             if (node->nodeType == BinaryNodeType::LEFT)
                 nodeLeft->parent->leftChild = nodeLeft;
             else if (node->nodeType == BinaryNodeType::RIGHT)
                 nodeLeft->parent->rightChild = nodeLeft;
             nodeLeft->nodeType = node->nodeType;
             node->nodeType = BinaryNodeType::RIGHT;
-            node->leftChild->nodeType = BinaryNodeType::LEFT;
-            int nodeHeight = std::max(node->rightChild->getHeight(), node->leftChild->getHeight())+1;
+            int lHeight = 0;
+            int rHeight = 0;
+            if (node->leftChild != nullptr)
+                lHeight = node->leftChild->getHeight();
+            if (node->rightChild != nullptr)
+                rHeight = node->rightChild->getHeight();
+            int nodeHeight = std::max(lHeight, rHeight)+1;
             node->setHeight(nodeHeight);
-            nodeHeight = std::max(nodeLeft->rightChild->getHeight(), nodeLeft->leftChild->getHeight())+1;
+            node->setBalanceFactor(lHeight-rHeight);
+            lHeight = 0;
+            rHeight = 0;
+            if (nodeLeft->leftChild != nullptr)
+                lHeight = nodeLeft->leftChild->getHeight();
+            if (nodeLeft->rightChild != nullptr)
+                rHeight = nodeLeft->rightChild->getHeight();
+            nodeHeight = std::max(lHeight, rHeight)+1;
             nodeLeft->setHeight(nodeHeight);
-            node->setBalanceFactor(node->leftChild->getHeight()-node->rightChild->getHeight());
-            nodeLeft->setBalanceFactor(nodeLeft->leftChild->getHeight()-nodeLeft->rightChild->getHeight());
+            nodeLeft->setBalanceFactor(lHeight-rHeight);
+            if (nodeLeft->parent == nullptr)
+                this->rootNode = nodeLeft;
         }
 
         void RR(AVLTreeNode<T>* node)
@@ -768,20 +788,37 @@ namespace xsl
             node->parent = nodeRight;
             node->rightChild = nodeRight->leftChild;
             nodeRight->leftChild = node;
-            node->rightChild->parent = node;
+            if (node->rightChild!=nullptr)
+            {
+                node->rightChild->parent = node;
+                node->rightChild->nodeType = BinaryNodeType::RIGHT;
+            }
             if (node->nodeType == BinaryNodeType::LEFT)
                 nodeRight->parent->leftChild = nodeRight;
             else if (node->nodeType == BinaryNodeType::RIGHT)
                 nodeRight->parent->rightChild = nodeRight;
             nodeRight->nodeType = node->nodeType;
             node->nodeType = BinaryNodeType::LEFT;
-            node->rightChild->nodeType = BinaryNodeType::RIGHT;
-            int nodeHeight = std::max(node->rightChild->getHeight(), node->leftChild->getHeight())+1;
+            int lHeight = 0;
+            int rHeight = 0;
+            if (node->leftChild!=nullptr)
+                lHeight = node->leftChild->getHeight();
+            if (node->rightChild!=nullptr)
+                rHeight = node->rightChild->getHeight();
+            int nodeHeight = std::max(lHeight, rHeight)+1;
             node->setHeight(nodeHeight);
-            nodeHeight = std::max(nodeRight->rightChild->getHeight(), nodeRight->leftChild->getHeight())+1;
+            node->setBalanceFactor(lHeight-rHeight);
+            lHeight = 0;
+            rHeight = 0;
+            if (nodeRight->leftChild!=nullptr)
+                lHeight = nodeRight->leftChild->getHeight();
+            if (nodeRight->rightChild!=nullptr)
+                rHeight = nodeRight->rightChild->getHeight();
+            nodeHeight = std::max(lHeight, rHeight)+1;
             nodeRight->setHeight(nodeHeight);
-            nodeRight->setBalanceFactor(nodeRight->leftChild->getHeight()-nodeRight->rightChild->getHeight());
-            node->setBalanceFactor(node->leftChild->getHeight()-nodeRight->rightChild->getHeight());
+            nodeRight->setBalanceFactor(lHeight-rHeight);
+            if (nodeRight->parent==nullptr)
+                this->rootNode = nodeRight;
         }
 
         void LR(AVLTreeNode<T>* node)
@@ -828,15 +865,13 @@ namespace xsl
             const int val2 = static_cast<int>(pow(2, level-2));
             for(int i=val2; i>0; i--)
             {
-                for (int i = val1; i > 0; i--)
+                for (int j = val1; j > 0; j--)
                 {
                     os << "-";
                 }
-                for (int i = val1; i > 0; i--)
-                {
-                    os << " ";
-                }
+                coutSkip(os, height, level);
             }
+            
             os << "\n";
         }
 
@@ -888,8 +923,10 @@ namespace xsl
             }
         }
 
-        void setChildNode(AVLTreeNode<T>* parentNode, AVLTreeNode<T>* childNode)
+        static void setChildNode(AVLTreeNode<T>* parentNode, AVLTreeNode<T>* childNode)
         {
+            if (childNode == nullptr)
+                return;
             if (parentNode->data > childNode->data)
             {
                 parentNode->leftChild = childNode;
@@ -903,31 +940,62 @@ namespace xsl
                 childNode->nodeType = BinaryNodeType::RIGHT;
             }
         }
+
+        static void setIndex(AVLTreeNode<T>* node)
+        {
+            if (node->parent == nullptr)
+            {
+                node->index = 1;
+                return;
+            }
+            if (node->nodeType == BinaryNodeType::LEFT)
+                node->index = node->parent->index*2;
+            else if (node->nodeType == BinaryNodeType::RIGHT)
+                node->index = node->parent->index*2+1;
+        }
+
+        AVLTreeNode<T>* treeCopyCore(AVLTreeNode<T>* node)
+        {
+            if (node == nullptr)
+                return nullptr;
+            AVLTreeNode<T>* newNode = new AVLTreeNode<T>();
+            newNode->data = node->data;
+            newNode->nodeType = node->nodeType;
+            newNode->setHeight(node->getHeight());
+            newNode->setBalanceFactor(node->getBalanceFactor());
+            newNode->index = node->index;
+            AVLTreeNode<T>* lNode = treeCopyCore(node->leftChild);
+            setChildNode(newNode, lNode);
+            AVLTreeNode<T>* rNode = treeCopyCore(node->rightChild);
+            setChildNode(newNode, rNode);
+            return newNode;
+        }
         
     public:
         AVLTree() = default;
-        AVLTree(AVLTree& other)
+        AVLTree(const AVLTree& other)
         {
             treeCopy(other);
         }
-        ~AVLTree() override
+        ~AVLTree()
         {
-            AVLTree<T>::empty();
+           empty();
         }
         
-        AVLTreeNode<T>* getRootNode() const override
-                {
-                    return rootNode;
-                }
+        AVLTreeNode<T>* getRootNode() const
+        {
+            return this->rootNode;
+        }
+        
         AVLTreeNode<T>* insert(const T& data)
         {
             AVLTreeNode<T>* newNode = new AVLTreeNode<T>(data);
-            if (rootNode == nullptr)
+            if (this->rootNode == nullptr)
             {
-                rootNode = newNode;
+                this->rootNode = newNode;
                 return newNode;
             }
-            AVLTreeNode<T>* currentNode = rootNode;
+            AVLTreeNode<T>* currentNode = this->rootNode;
             AVLTreeNode<T>* previousNode = nullptr;
             while (currentNode != nullptr)
             {
@@ -944,6 +1012,7 @@ namespace xsl
             AVLTree<T>::setChildNode(previousNode, newNode);
             setTreeHeight(newNode);
             checkBalance(newNode);
+            setIndex(newNode);
             return newNode;
         }
 
@@ -960,8 +1029,8 @@ namespace xsl
             {
                 if (currentNode != nullptr)
                 {
-                    callback(currentNode);
                     nodeStack.push(currentNode);
+                    callback(currentNode);
                     currentNode = currentNode->leftChild;
                 }
                 else
@@ -997,19 +1066,14 @@ namespace xsl
             }
         }
 
-        void treeCopy(AVLTree<T>& tree)
+        void treeCopy(const AVLTree<T>& tree)
         {
-            tree.preorderTraversal
-            (
-                [this](AVLTreeNode<T>* node)
-                {
-                    this->insert(node->data);
-                },
-                tree.getRootNode()
-            );
+            if (this->rootNode != nullptr)
+                this->empty();
+            this->rootNode = treeCopyCore(tree.getRootNode());
         }
 
-        void empty() override
+        void empty()
         {
             postorderTraversal
             (
@@ -1017,7 +1081,7 @@ namespace xsl
                 {
                     delete node;
                 },
-                rootNode
+                this->rootNode
             );
         }
 
@@ -1039,7 +1103,7 @@ namespace xsl
                 }
                 
                 coutSpace(os, height, level);
-                for(int i=pow(2, level-1);i>0;--i)
+                for(int i=static_cast<int>(pow(2, level-1));i>0;--i)
                 {
                     if (nodeQueue.front() != nullptr)
                     {
