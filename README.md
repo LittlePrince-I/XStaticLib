@@ -23,8 +23,9 @@ void InsertSort(std::vector<T>& arr)
 		}
 		arr[j + 1] = key;
 	}
-}###2.
+}
 ```
+
 
 
 
